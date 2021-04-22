@@ -169,11 +169,55 @@
    Voltage divider
         R1
 5V   --[1K]--*---->-  ESP (3.3V)
-              |
-             |2| R2      
-             |K|         
-              |          
-             _|_
+             |
+            |2| R2      
+            |K|         
+             |          
+            _|_
+
+
+
+
+ Adapter to connect the Raspberry PICO to the Mainboard
+
+ !! The PICO Leds BUS must have consecutive pin numbers !!
+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ PICO    LED / DCC Arduino
+          D9         Right  switch
+          D8         Middle switch
+          D7         Left   switch
+ 0        D6         LED Bus 0
+(1)       A4         LED Bus 1
+          D3         LED 1 (Left   switch) or LED Bus 2
+          D4         LED 2 (Middle switch) or LED Bus 3
+          D13        LED 3 (Right  switch) or LED Bus 4 
+(5)       D12        LED Bus 5
+(6)       D11        LED Bus 6
+(7)       -          LED Bus 7
+ 22       D2         DCC Signal   with voltage divider 510/1K if Selctrix is used
+          A0         CLOCK_K    (RX2), with 3,3V -> 5V level shifter
+          A2         BUTTONS         , with 1K/2K voltage divider
+          A3         RESET_K         , with 3,3V -> 5V level shifter
+          A5         Analog buttons or KEY_80, with 1K/2K voltage divider, change to 100k/220k when using as analog buttons
+          A6         Analog buttons  , with 100K/220K voltage divider
+          A7         Day & Night     , with 100K/220K voltage divider
+ 25       -          Onboard LED
+          -          SDA I2C Display
+          -          SCL I2C Display
+          (A1)       CAN Rx or A1 via Jumper or Selectrix, with optional voltage divider
+          -          CAN Tx
+          D0         USB Tx
+          D1         USB Rx
+ 40       5V         5V Supply
+ 
+   Voltage divider
+        R1
+5V   --[1K]--*---->-  PICO (3.3V)
+             |
+            |2| R2      
+            |K|         
+             |          
+            _|_
 
  Revision History:
  ~~~~~~~~~~~~~~~~~
@@ -197,6 +241,12 @@
  10.04.21:  - add new FarbTest protocol without need to reset CPU 
 
 */
+
+#ifdef ARDUINO_RASPBERRY_PI_PICO
+  #include "pico/stdlib.h"
+  #include <pico/multicore.h>
+#endif
+
 #include <Arduino.h>
 
 #ifndef __LEDS_AUTOPROG_H__
@@ -219,7 +269,26 @@
   #ifdef USE_SPI_COM
 	#error "USE_SPI_COM can't be used on ESP32 platform"
   #endif
+  #define DCC_SIGNAL_PIN   13
+  
 #endif
+
+#ifdef ARDUINO_RASPBERRY_PI_PICO
+  const uint DATA_IN_PIN = 13;
+  const uint DATA_OUT_PIN = 14;
+  const uint NUM_LEDS_TO_EMULATE = 1;
+  #include "ws2811.hpp"
+  #define USE_DCC_INTERFACE
+  #include "DCCInterface.h"
+  #include "InMemoryStream.h"
+  #ifdef USE_SPI_COM
+  #error "USE_SPI_COM can't be used on ESP32 platform"
+  #endif
+  #define DCC_SIGNAL_PIN   22
+  void ws281x_receive_thread();
+  WS2811Client<NUM_LEDS_TO_EMULATE, GRB>* pWS2811;
+#endif
+
 
 #define LED_DO_PIN          6  // Pin D6 is connected to the LED stripe
 #define CAN_CS_PIN          10 // Pin D10 is used as chip select for the CAN bus
@@ -379,8 +448,8 @@ Benoetig als 142 byte
 #endif
 
 #ifdef USE_SPI_COM                                                                                            // 13.05.20:
-  #ifdef ESP32
-	#error "USE_SPI_COM can't be used  on ESP32 platform"
+  #if defined(ESP32) || defined(ARDUINO_RASPBERRY_PI_PICO)
+  #error "USE_SPI_COM can't be used on this platform"
   #endif
 
   #ifdef USE_CAN_AS_INPUT
@@ -417,11 +486,14 @@ CRGB leds[NUM_LEDS];           // Define the array of leds
 #ifdef ESP32                                                                                                  // 30.10.20: Juergen
   TaskHandle_t  MLLTaskHnd ;
   TaskHandle_t  Core1TaskHnd ;
-  InMemoryStream stream(256);
-  #if defined USE_DCC_INTERFACE
-	DCCInterface dccInterface;
-  #endif
   #include "esp_log.h"
+#endif
+
+#if defined USE_DCC_INTERFACE || defined USE_LOCONET_INTERFACE
+InMemoryStream stream(256);
+#endif
+#if defined USE_DCC_INTERFACE 
+DCCInterface dccInterface;
 #endif
 
 bool Send_Disable_Pin_Active = 1;                                                                             // 13.05.20:
@@ -1197,7 +1269,7 @@ void Receive_LED_Color_per_RS232()                                              
    }
 #endif // USE_CAN_AS_INPUT
 
-#if !defined(ESP32) && !defined(ARDUINO_AVR_NANO_EVERY)                                                       // 19.01.21: Juergen: Added Every
+#if !defined(ESP32) && !defined(ARDUINO_AVR_NANO_EVERY) && !defined(ARDUINO_RASPBERRY_PI_PICO)                // 19.01.21: Juergen: Added Every
   #include <avr/boot.h>
   //----------------------
   void Debug_Print_Fuses()                                                                                    // 29.10.20:
@@ -1460,12 +1532,11 @@ void setup(){
   #endif
 #endif
 
-#ifdef ESP32                                                                                                  // 30.10.20: Juergen
-  #define DCC_SIGNAL_PIN   13
-  #ifdef USE_DCC_INTERFACE
+#ifdef USE_DCC_INTERFACE
   dccInterface.setup(DCC_SIGNAL_PIN, -1, stream);
-  #endif
+#endif
 
+#ifdef ESP32                                                                                                  // 30.10.20: Juergen
   // reset the GPIO pin mapping - caused by a bug in FastLED 3.3.3 rmt module GPIO0 was remapped and not      // 02.12.20:  Juergen
   // accessbile as a GPIO anymore.
   // remove workaround when fix is available in FastLED library
@@ -1503,6 +1574,11 @@ void setup(){
 
 #if defined(USE_DMX_PIN)                                                                                      // 19.01.21: Juergen
   dmxInterface.setup(USE_DMX_PIN,&(leds[DMX_LED_OFFSET].r), DMX_CHANNEL_COUNT);
+#endif
+
+#ifdef ARDUINO_RASPBERRY_PI_PICO_OFF
+    pWS2811 = new WS2811Client<NUM_LEDS_TO_EMULATE, GRB>();
+	//multicore_launch_core1(ws281x_receive_thread);
 #endif
 
   //Eigene_setup();
@@ -1869,11 +1945,11 @@ void Set_Mainboard_LEDs()
 //-----------
 void loop(){
 //-----------
-#ifdef ESP32
-  #ifdef USE_DCC_INTERFACE
-    dccInterface.process();
-  #endif
-#else
+#ifdef USE_DCC_INTERFACE
+  dccInterface.process();
+#endif
+
+#ifndef ESP32
   MLLMainLoop();
 #endif
 
@@ -1956,7 +2032,19 @@ void MLLMainLoop(){
   Set_Mainboard_LEDs();                 // Turn on/off the LEDs on the mainboard if configured
 
   FastLED.show();                       // Show the LEDs (send the leds[] array to the LED stripe)
-
+ 
+#ifdef ARDUINO_RASPBERRY_PI_PICO_OFF
+  const auto ledResult = pWS2811->getLEDsAtomic(10000);
+  if (ledResult.valid)
+  {
+	for (auto it = ledResult.leds.begin(); it != ledResult.leds.end(); it++) {
+	  Serial.printf("[%7u] LED %u: ", time_us_32() / 1000, std::distance(ledResult.leds.begin(), it));
+	  print_led_state(*it);
+	}
+    Serial.flush();
+  }
+#endif
+ 
 #if defined(USE_DMX_PIN)                                                                                      // 19.01.21: Juergen
   dmxInterface.loop();
 #endif
@@ -2006,3 +2094,23 @@ void MLLMainLoop(){
        }
   #endif
 }
+
+#ifdef ARDUINO_RASPBERRY_PI_PICO_OFF
+
+static void print_led_state(const RGBLED led) {
+    Serial.printf("%3u\t%3u\t%3u\n", led.colors.r, led.colors.g, led.colors.b);
+}
+
+void ws281x_receive_thread() {
+    /*auto ws2811 = WS2811Client<NUM_LEDS_TO_EMULATE, GRB>();
+    while (true) {
+        const auto leds = ws2811.getLEDsAtomic();
+        for (auto it = leds.begin(); it != leds.end(); it++) {
+            Serial.printf("[%7u] LED %u: ", time_us_32() / 1000, std::distance(leds.begin(), it));
+            print_led_state(*it);
+        }
+        sleep_ms(500);
+        tight_loop_contents();
+    }*/
+}
+#endif

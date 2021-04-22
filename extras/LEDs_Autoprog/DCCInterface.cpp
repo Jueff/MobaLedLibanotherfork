@@ -38,7 +38,7 @@ Revision History :
 18.10.20:  Versions 1.0 (Jürgen)
 */
 
-#ifdef ESP32
+#if defined(ESP32) || defined(ARDUINO_RASPBERRY_PI_PICO)
 // Disable the warning:                                                                                       // 26.12.19:
 //   ... warning: 'EEPROM' defined but not used [-Wunused-variable]
 //   static EEPROMClass EEPROM;
@@ -80,7 +80,9 @@ void DCCInterface::addToSendBuffer(const char *s)
 }
 
 #include <stdarg.h>
+#ifndef ARDUINO_RASPBERRY_PI_PICO
 #include <WString.h>
+#endif
 
 #define printf(Format, ...) printf_proc(F(Format), ##__VA_ARGS__)   // see: https://gcc.gnu.org/onlinedocs/cpp/Variadic-Macros.html
 
