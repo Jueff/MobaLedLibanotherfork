@@ -33,13 +33,16 @@
 
 #define FASTLED_INTERNAL        // Disable version number message in FastLED library (looks like an error)
 
+#ifdef ARDUINO_RASPBERRY_PI_PICO
+#include "PicoFastLED.h"				// Juergen: a small self made implementation of FastLED for PICO (only FastLED code needed by MLL)
+#else
 #include "FastLED.h"            // The FastLED library must be installed in addition if you got the
                                 // error message "..fatal error: FastLED.h: No such file or directory"
                                 // Arduino IDE: Sketch / Include library / Manage libraries                    Deutsche IDE: Sketch / Bibliothek einbinden / Bibliothek verwalten
                                 //              Type "FastLED" in the "Filter your search..." field                          "FastLED" in das "Grenzen Sie ihre Suche ein" Feld eingeben
                                 //              Select the entry and click "Install"                                         Gefundenen Eintrag auswaehlen und "Install" anklicken
 
-
+#endif
 #include "Dprintf.h"            // Debug Ausgaben
 
 #include "Lib_Config.h"         // Library configurarion

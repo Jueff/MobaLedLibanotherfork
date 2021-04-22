@@ -581,7 +581,7 @@ void LocoNetThrottleClass::updateSpeed(uint8_t Speed, uint8_t ForceNotify )
 
 void LocoNetThrottleClass::updateState(TH_STATE State, uint8_t ForceNotify )
 {
-  TH_STATE  PrevState ;
+  TH_STATE PrevState ;
 
   if( ForceNotify || myState != State )
   {
@@ -594,7 +594,7 @@ void LocoNetThrottleClass::updateState(TH_STATE State, uint8_t ForceNotify )
 
 void LocoNetThrottleClass::updateStatus1(uint8_t Status, uint8_t ForceNotify )
 {
-  register uint8_t Mask ;	// Temporary uint8_t Variable for bitwise AND to force
+  uint8_t Mask ;	// Temporary uint8_t Variable for bitwise AND to force
   // the compiler to only do 8 bit operations not 16
 
   if( ForceNotify || myStatus1 != Status )
