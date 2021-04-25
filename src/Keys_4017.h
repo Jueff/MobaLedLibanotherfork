@@ -220,18 +220,18 @@ void Keys_4017_Setup()
   pinMode(CLK_PIN,    OUTPUT);
   pinMode(RESET_PIN,  OUTPUT);
   digitalWrite2(RESET_PIN, 1); // Reset
-#if defined(ESP32)
+#if defined(ESP32)                               // Add ESP32 Support, 20.11.2020 Juergen 
+  for (uint8_t pin = 0; pin < BUTTON_INP_CNT; pin++)		// Pins are not INPUTS by default -> set it to intput
+    pinMode(Button_Pins[pin],INPUT);													
+  timer = timerBegin(0, 80, true);								// divide with Clock freq (returned in MHz) -> so timer runs with 1MHz by default
+  timerAttachInterrupt(timer, TimerInt1, false);	
+  timerAlarmWrite(timer, 100000/(_MAX_CTR_CHANNELS), true);
+  timerAlarmEnable(timer);
+#elif defined(ARDUINO_RASPBERRY_PI_PICO)         // Add Pico Support, 21.04.2021 Juergen 
+  add_repeating_timer_ms(100/(_MAX_CTR_CHANNELS), TimerInt1, NULL, &timer);
+#else																							
   Timer1.initialize(100000/(_MAX_CTR_CHANNELS)); // [us]   Kann aus irgend einem Grund nicht im Konstruktor aufgerufen werden. Dann stimmt Periode gar nicht ;-(
   Timer1.attachInterrupt(TimerInt1);             //        Darum ist es jetzt eine Normale Funktion und keine Klasse.
-#elif defined(ARDUINO_RASPBERRY_PI_PICO)
-   add_repeating_timer_ms(100/(_MAX_CTR_CHANNELS), TimerInt1, NULL, &timer);
-#else																							// Add ESP32 Support, 20.11.2020 Juergen 
-	for (uint8_t pin = 0; pin < BUTTON_INP_CNT; pin++)		// Pins are not INPUTS by default -> set it to intput
-		pinMode(Button_Pins[pin],INPUT);													
-	timer = timerBegin(0, 80, true);								// divide with Clock freq (returned in MHz) -> so timer runs with 1MHz by default
-	timerAttachInterrupt(timer, TimerInt1, false);	
-	timerAlarmWrite(timer, 100000/(_MAX_CTR_CHANNELS), true);
-	timerAlarmEnable(timer);
 #endif	
 }
 

@@ -194,9 +194,9 @@
 (5)       D12        LED Bus 5
 (6)       D11        LED Bus 6
 (7)       -          LED Bus 7
- 13       D3         LED 1 (Left   switch) 
- 12       D4         LED 2 (Middle switch) 
- 11       D5         LED 3 (Right  switch)  
+ 10       D3         LED 1 (Left   switch) 
+ 9        D4         LED 2 (Middle switch) 
+ 8        D5         LED 3 (Right  switch)  
  22       D2         DCC Signal   with voltage divider 510/1K if Selctrix is used
  14       A0         CLOCK_K    (RX2), with 3,3V -> 5V level shifter
  16       A2         BUTTONS         , with 1K/2K voltage divider
