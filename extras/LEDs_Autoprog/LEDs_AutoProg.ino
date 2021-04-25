@@ -2,7 +2,7 @@
  MobaLedLib: LED library for model railways
  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
- Copyright (C) 2018 - 2020  Hardi Stengelin: MobaLedLib@gmx.de
+ Copyright (C) 2018 - 2021  Hardi Stengelin: MobaLedLib@gmx.de
 
  This library is free software; you can redistribute it and/or
  modify it under the terms of the GNU Lesser General Public
@@ -242,7 +242,9 @@
  14.11.20:  - Added the experimental ESP32 support
  19.01.21:  - Added DMX support by Juergen
  10.04.21:  - add new FarbTest protocol without need to reset CPU 
-
+ 21.04.21:  - Juergen: release ESP32 and DMX512 support
+ 24.04.21:  - Juergen: add Pico support 
+ 25.04.21:  - Juergen: improve signaling of DCC status using onboard led (ESP & PICO)
 */
 
 #ifdef ARDUINO_RASPBERRY_PI_PICO
@@ -304,7 +306,7 @@
                                // The programm also sends a command to the DCC/SX slave to deactivate his pins
 
 #if defined(ESP32)                                                                                                  // 30.10.20: Juergen
-  #define LED0_PIN    2          // LED Bus 2
+  #define LED0_PIN    2          // Onboard Led
   #define LED1_PIN    16         // Left   Yellow LED on the mainboard
   #define LED2_PIN    14         // Middle White  LED on the mainboard
   #define LED3_PIN    0          // Right  Blue   LED on the mainboard
@@ -447,9 +449,9 @@ Benoetig als 142 byte
 #else // not USE_CAN_AS_INPUT
   #ifndef LED_HEARTBEAT_PIN
     #if defined(ESP32)                                                                                              // 30.10.20: Juergen
-      #define LED_HEARTBEAT_PIN  2  // Build in LED
+      #define DCC_STATUS_PIN  2  // Build in LED
     #elif defined(ARDUINO_RASPBERRY_PI_PICO)                                                                        // 24.04.21: Juergen
-      #define LED_HEARTBEAT_PIN  LED_BUILTIN
+      #define DCC_STATUS_PIN  LED_BUILTIN
     #else
       #define LED_HEARTBEAT_PIN  13 // Build in LED
     #endif
@@ -947,10 +949,10 @@ void Receive_LED_Color_per_RS232()                                              
 		#endif
 	#endif
 
-	#define STRINGIFY(s) XSTRINGIFY(s)
-	#define XSTRINGIFY(s) #s
-	#pragma message ("INCH_CNT=" STRINGIFY(INCH_CNT))
-	#pragma message ("START_SEND_CHANNEL=" STRINGIFY(START_SEND_CHANNEL))
+//	#define STRINGIFY(s) XSTRINGIFY(s)
+//	#define XSTRINGIFY(s) #s
+//	#pragma message ("INCH_CNT=" STRINGIFY(INCH_CNT))
+//	#pragma message ("START_SEND_CHANNEL=" STRINGIFY(START_SEND_CHANNEL))
 
  	void Send_Inputs(char type, bool forceSend)
 	{
@@ -1542,7 +1544,10 @@ void setup(){
 #endif
 
 #ifdef USE_DCC_INTERFACE
-  dccInterface.setup(DCC_SIGNAL_PIN, -1, stream);
+  #ifndef DCC_STATUS_PIN
+  #define DCC_STATUS_PIN -1
+  #endif
+  dccInterface.setup(DCC_SIGNAL_PIN, DCC_STATUS_PIN, stream);
 #endif
 
 #ifdef ESP32                                                                                                  // 30.10.20: Juergen
