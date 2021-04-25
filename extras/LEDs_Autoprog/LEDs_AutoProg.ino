@@ -146,7 +146,7 @@
  32       A4         LED Bus 1
  16       D3         LED 1 (Left   switch) or LED Bus 2
  14       D4         LED 2 (Middle switch) or LED Bus 3
- 18       D13        LED 3 (Right  switch) or LED Bus 4 
+ 18       D5         LED 3 (Right  switch) or LED Bus 4 
  19       D12        LED Bus 5
  23       D11        LED Bus 6
  0        -          LED Bus 7  (not available on 30 pin ESP32 module)
@@ -183,21 +183,24 @@
  !! The PICO Leds BUS must have consecutive pin numbers !!
  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  PICO    LED / DCC Arduino
-          D9         Right  switch
-          D8         Middle switch
-          D7         Left   switch
+ 11       D9         Right  switch
+ 12       D8         Middle switch
+ 13       D7         Left   switch
  0        D6         LED Bus 0
 (1)       A4         LED Bus 1
-          D3         LED 1 (Left   switch) or LED Bus 2
-          D4         LED 2 (Middle switch) or LED Bus 3
-          D13        LED 3 (Right  switch) or LED Bus 4 
+(2)                  LED Bus 2
+(3)                  LED Bus 3
+(4)                  LED Bus 4
 (5)       D12        LED Bus 5
 (6)       D11        LED Bus 6
 (7)       -          LED Bus 7
+ 13       D3         LED 1 (Left   switch) 
+ 12       D4         LED 2 (Middle switch) 
+ 11       D5         LED 3 (Right  switch)  
  22       D2         DCC Signal   with voltage divider 510/1K if Selctrix is used
-          A0         CLOCK_K    (RX2), with 3,3V -> 5V level shifter
-          A2         BUTTONS         , with 1K/2K voltage divider
-          A3         RESET_K         , with 3,3V -> 5V level shifter
+ 14       A0         CLOCK_K    (RX2), with 3,3V -> 5V level shifter
+ 16       A2         BUTTONS         , with 1K/2K voltage divider
+ 15       A3         RESET_K         , with 3,3V -> 5V level shifter
           A5         Analog buttons or KEY_80, with 1K/2K voltage divider, change to 100k/220k when using as analog buttons
           A6         Analog buttons  , with 100K/220K voltage divider
           A7         Day & Night     , with 100K/220K voltage divider
@@ -274,8 +277,8 @@
 #endif
 
 #ifdef ARDUINO_RASPBERRY_PI_PICO
-  const uint DATA_IN_PIN = 13;
-  const uint DATA_OUT_PIN = 14;
+  const uint DATA_IN_PIN = 29;
+  const uint DATA_OUT_PIN = 28;
   const uint NUM_LEDS_TO_EMULATE = 1;
   #include "ws2811.hpp"
   #define USE_DCC_INTERFACE
@@ -300,7 +303,7 @@
 #define DISABLE_SPI_DELAY 3000 // After this time the SPI pins are disabled if they are not used
                                // The programm also sends a command to the DCC/SX slave to deactivate his pins
 
-#ifdef ESP32                                                                                                  // 30.10.20: Juergen
+#if defined(ESP32)                                                                                                  // 30.10.20: Juergen
   #define LED0_PIN    2          // LED Bus 2
   #define LED1_PIN    16         // Left   Yellow LED on the mainboard
   #define LED2_PIN    14         // Middle White  LED on the mainboard
@@ -318,6 +321,10 @@
   #define LED14_PIN   32         // KEY_80, Pin 11
   #define LED15_PIN   39         // KEY_80, Pin 12
   #define LED16_PIN   15         // KEYBRD, Pin 5
+#elif defined(ARDUINO_RASPBERRY_PI_PICO)                                                                            // 24.04.21: Juergen
+  #define LED1_PIN    13          // Left   Yellow LED on the mainboard
+  #define LED2_PIN    12          // Middle White  LED on the mainboard
+  #define LED3_PIN    11          // Right  Blue   LED on the mainboard
 #else // Nano
   #define LED0_PIN    2          // LED Bus 2
   #define LED1_PIN    3          // Left   Yellow LED on the mainboard
@@ -439,8 +446,10 @@ Benoetig als 142 byte
    #endif
 #else // not USE_CAN_AS_INPUT
   #ifndef LED_HEARTBEAT_PIN
-    #ifdef ESP32                                                                                              // 30.10.20: Juergen
+    #if defined(ESP32)                                                                                              // 30.10.20: Juergen
       #define LED_HEARTBEAT_PIN  2  // Build in LED
+    #elif defined(ARDUINO_RASPBERRY_PI_PICO)                                                                        // 24.04.21: Juergen
+      #define LED_HEARTBEAT_PIN  LED_BUILTIN
     #else
       #define LED_HEARTBEAT_PIN  13 // Build in LED
     #endif
