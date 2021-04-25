@@ -6,7 +6,7 @@
 
 #include "pico/stdlib.h"
 #include "hardware/pio.h"
-#include "dma.h"
+#include "hardware/dma.h"
 #include "hardware/clocks.h"
 
 #include "ws2811.pio.h"
