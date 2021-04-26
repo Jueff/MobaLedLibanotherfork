@@ -243,6 +243,7 @@
  19.01.21:  - Added DMX support by Juergen
  10.04.21:  - add new FarbTest protocol without need to reset CPU 
  21.04.21:  - Juergen: release ESP32 and DMX512 support
+ 23.04.21:  - ubit: Added ServoMP3 commands
  24.04.21:  - Juergen: add Pico support 
  25.04.21:  - Juergen: improve signaling of DCC status using onboard led (ESP & PICO)
 */
@@ -253,6 +254,7 @@
 #endif
 
 #include <Arduino.h>
+#include "MP3.h"
 
 #ifndef __LEDS_AUTOPROG_H__
   #define FASTLED_ESP32_FLASH_LOCK 1
